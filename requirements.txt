@@ -1,0 +1,11 @@
+pandas
+numpy
+matplotlib
+seaborn
+plotly
+statsmodels
+scikit-learn==1.3.2
+streamlit
+streamlit-option-menu
+missingno
+xgboost
