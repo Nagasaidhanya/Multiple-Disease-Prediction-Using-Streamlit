@@ -1,261 +1,214 @@
-import streamlit as st 
-import pickle 
+import streamlit as st
+import pickle
 import os
 from streamlit_option_menu import option_menu
-import os
-os.system('pip install --user streamlit_option_menu')
-def safe_float_conversion(value, default=0.0):
-    try:
-        return float(value)
-    except ValueError:
-        return default
 
-st.set_page_config(page_title="Mulitple Disease Prediction",layout="wide", page_icon="👨‍🦰🤶")
+# --------------------------------------------------
+# Page Config
+# --------------------------------------------------
+st.set_page_config(
+    page_title="Multiple Disease Prediction",
+    layout="wide",
+    page_icon="🏥"
+)
 
-
+# --------------------------------------------------
+# Load Models
+# --------------------------------------------------
 working_dir = os.path.dirname(os.path.abspath(__file__))
 
-diabetes_model = pickle.load(open(f'{working_dir}/saved_models/diabetes.pkl','rb'))
-heart_disease_model = pickle.load(open(f'{working_dir}/saved_models/heart.pkl','rb'))
-kidney_disease_model = pickle.load(open(f'{working_dir}/saved_models/kidney.pkl','rb'))
+diabetes_model = pickle.load(open(os.path.join(working_dir, "saved_models/diabetes.pkl"), "rb"))
+heart_disease_model = pickle.load(open(os.path.join(working_dir, "saved_models/heart.pkl"), "rb"))
+kidney_disease_model = pickle.load(open(os.path.join(working_dir, "saved_models/kidney.pkl"), "rb"))
 
-NewBMI_Overweight=0
-NewBMI_Underweight=0
-NewBMI_Obesity_1=0
-NewBMI_Obesity_2=0 
-NewBMI_Obesity_3=0
-NewInsulinScore_Normal=0 
-NewGlucose_Low=0
-NewGlucose_Normal=0 
-NewGlucose_Overweight=0
-NewGlucose_Secret=0
-
+# --------------------------------------------------
+# Sidebar Menu
+# --------------------------------------------------
 with st.sidebar:
-    selected = option_menu("Mulitple Disease Prediction", 
-                ['Diabetes Prediction',
-                 'Heart Disease Prediction',
-                 'Kidney Disease Prediction'],
-                 menu_icon='hospital-fill',
-                 icons=['activity','heart', 'person'],
-                 default_index=0)
+    selected = option_menu(
+        "Multiple Disease Prediction",
+        ["Diabetes Prediction", "Heart Disease Prediction", "Kidney Disease Prediction"],
+        icons=["activity", "heart", "person"],
+        menu_icon="hospital-fill",
+        default_index=0
+    )
 
-if selected == 'Diabetes Prediction':
-    st.title("Diabetes Prediction Using Machine Learning")
+# ==================================================
+# DIABETES PREDICTION
+# ==================================================
+if selected == "Diabetes Prediction":
+
+    st.title("🩸 Diabetes Prediction")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        Pregnancies = st.text_input("Number of Pregnancies")
+        Pregnancies = st.number_input("Pregnancies", min_value=0, step=1)
     with col2:
-        Glucose = st.text_input("Glucose Level")
-        Glucose = safe_float_conversion(Glucose)
-
+        Glucose = st.number_input("Glucose Level", min_value=0.0)
     with col3:
-        BloodPressure = st.text_input("BloodPressure Value")
-    with col1:
-        SkinThickness = st.text_input("SkinThickness Value")
-    with col2:
-        Insulin = st.text_input("Insulin Value")
-        Insulin = safe_float_conversion(Insulin)
-
-    with col3:
-        BMI = st.text_input("BMI Value")
-        BMI = safe_float_conversion(BMI)
+        BloodPressure = st.number_input("Blood Pressure", min_value=0.0)
 
     with col1:
-        DiabetesPedigreeFunction = st.text_input("DiabetesPedigreeFunction Value")
+        SkinThickness = st.number_input("Skin Thickness", min_value=0.0)
     with col2:
-        Age = st.text_input("Age")
+        Insulin = st.number_input("Insulin", min_value=0.0)
+    with col3:
+        BMI = st.number_input("BMI", min_value=0.0)
+
+    with col1:
+        DiabetesPedigreeFunction = st.number_input("Diabetes Pedigree Function", min_value=0.0)
+    with col2:
+        Age = st.number_input("Age", min_value=0, step=1)
+
     diabetes_result = ""
+
     if st.button("Diabetes Test Result"):
-        if BMI<=18.5:
+
+        # Reset derived features
+        NewBMI_Underweight = NewBMI_Overweight = 0
+        NewBMI_Obesity_1 = NewBMI_Obesity_2 = NewBMI_Obesity_3 = 0
+        NewInsulinScore_Normal = 0
+        NewGlucose_Low = NewGlucose_Normal = 0
+        NewGlucose_Overweight = NewGlucose_Secret = 0
+
+        # BMI Categories
+        if BMI <= 18.5:
             NewBMI_Underweight = 1
-        elif 18.5 < BMI <=24.9:
-            pass
-        elif 24.9<BMI<=29.9:
-            NewBMI_Overweight =1
-        elif 29.9<BMI<=34.9:
-            NewBMI_Obesity_1 =1
-        elif 34.9<BMI<=39.9:
-            NewBMI_Obesity_2=1
-        elif BMI>39.9:
+        elif 24.9 < BMI <= 29.9:
+            NewBMI_Overweight = 1
+        elif 29.9 < BMI <= 34.9:
+            NewBMI_Obesity_1 = 1
+        elif 34.9 < BMI <= 39.9:
+            NewBMI_Obesity_2 = 1
+        elif BMI > 39.9:
             NewBMI_Obesity_3 = 1
-        
-        if 16<=Insulin<=166:
+
+        # Insulin
+        if 16 <= Insulin <= 166:
             NewInsulinScore_Normal = 1
 
-        if Glucose<=70:
+        # Glucose
+        if Glucose <= 70:
             NewGlucose_Low = 1
-        elif 70<Glucose<=99:
+        elif 70 < Glucose <= 99:
             NewGlucose_Normal = 1
-        elif 99<Glucose<=126:
+        elif 99 < Glucose <= 126:
             NewGlucose_Overweight = 1
-        elif Glucose>126:
+        else:
             NewGlucose_Secret = 1
 
-        user_input=[Pregnancies,Glucose,BloodPressure,SkinThickness,Insulin,
-                    BMI,DiabetesPedigreeFunction,Age, NewBMI_Underweight,
-                    NewBMI_Overweight,NewBMI_Obesity_1,
-                    NewBMI_Obesity_2,NewBMI_Obesity_3,NewInsulinScore_Normal, 
-                    NewGlucose_Low,NewGlucose_Normal, NewGlucose_Overweight,
-                    NewGlucose_Secret]
-        
-        user_input = [safe_float_conversion(x) for x in user_input]
+        user_input = [
+            Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin,
+            BMI, DiabetesPedigreeFunction, Age,
+            NewBMI_Underweight, NewBMI_Overweight,
+            NewBMI_Obesity_1, NewBMI_Obesity_2, NewBMI_Obesity_3,
+            NewInsulinScore_Normal,
+            NewGlucose_Low, NewGlucose_Normal,
+            NewGlucose_Overweight, NewGlucose_Secret
+        ]
+
         prediction = diabetes_model.predict([user_input])
-        if prediction[0]==1:
-            diabetes_result = "The person has diabetic"
-        else:
-            diabetes_result = "The person has no diabetic"
+
+        diabetes_result = (
+            "🔴 The person is diabetic"
+            if prediction[0] == 1
+            else "🟢 The person is not diabetic"
+        )
+
     st.success(diabetes_result)
 
-if selected == 'Heart Disease Prediction':
-    st.title("Heart Disease Prediction Using Machine Learning")
-    col1, col2, col3  = st.columns(3)
+# ==================================================
+# HEART DISEASE PREDICTION
+# ==================================================
+if selected == "Heart Disease Prediction":
+
+    st.title("❤️ Heart Disease Prediction")
+
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        age = st.text_input("Age")
+        age = st.number_input("Age", min_value=0, step=1)
     with col2:
-        sex = st.text_input("Sex")
+        sex = st.number_input("Sex (0 = Female, 1 = Male)", min_value=0, max_value=1)
     with col3:
-        cp = st.text_input("Chest Pain Types")
+        cp = st.number_input("Chest Pain Type", min_value=0)
+
     with col1:
-        trestbps = st.text_input("Resting Blood Pressure")
+        trestbps = st.number_input("Resting Blood Pressure", min_value=0.0)
     with col2:
-        chol = st.text_input("Serum Cholestroal in mg/dl")
+        chol = st.number_input("Cholesterol", min_value=0.0)
     with col3:
-        fbs = st.text_input('Fasting Blood Sugar > 120 mg/dl')
-    with col1:
-        restecg = st.text_input('Resting Electrocardiographic results')
+        fbs = st.number_input("Fasting Blood Sugar > 120", min_value=0, max_value=1)
 
+    with col1:
+        restecg = st.number_input("Rest ECG", min_value=0)
     with col2:
-        thalach = st.text_input('Maximum Heart Rate achieved')
-
+        thalach = st.number_input("Max Heart Rate", min_value=0.0)
     with col3:
-        exang = st.text_input('Exercise Induced Angina')
+        exang = st.number_input("Exercise Induced Angina", min_value=0, max_value=1)
 
     with col1:
-        oldpeak = st.text_input('ST depression induced by exercise')
-
+        oldpeak = st.number_input("ST Depression", min_value=0.0)
     with col2:
-        slope = st.text_input('Slope of the peak exercise ST segment')
-
+        slope = st.number_input("Slope", min_value=0)
     with col3:
-        ca = st.text_input('Major vessels colored by flourosopy')
+        ca = st.number_input("Major Vessels", min_value=0)
 
     with col1:
-        thal = st.text_input('thal: 0 = normal; 1 = fixed defect; 2 = reversable defect')
-    heart_disease_result = ""
+        thal = st.number_input("Thal", min_value=0)
+
+    heart_result = ""
+
     if st.button("Heart Disease Test Result"):
-        user_input = [age,sex,cp,trestbps,chol,fbs,restecg,thalach,exang,oldpeak,slope,ca,thal]
-        user_input = [safe_float_conversion(x) for x in user_input]
+        user_input = [
+            age, sex, cp, trestbps, chol, fbs,
+            restecg, thalach, exang, oldpeak,
+            slope, ca, thal
+        ]
+
         prediction = heart_disease_model.predict([user_input])
-        if prediction[0]==1:
-            heart_disease_result = "This person is having heart disease"
-        else:
-            heart_disease_result = "This person does not have any heart disease"
-    st.success(heart_disease_result)
 
-if selected == 'Kidney Disease Prediction':
-    
-    st.title("Kidney Disease Prediction using ML")
+        heart_result = (
+            "🔴 Person has heart disease"
+            if prediction[0] == 1
+            else "🟢 Person does not have heart disease"
+        )
 
-    col1, col2, col3, col4, col5 = st.columns(5)
+    st.success(heart_result)
 
-    with col1:
-        age = st.text_input('Age')
+# ==================================================
+# KIDNEY DISEASE PREDICTION
+# ==================================================
+if selected == "Kidney Disease Prediction":
 
-    with col2:
-        blood_pressure = st.text_input('Blood Pressure')
+    st.title("🧬 Kidney Disease Prediction")
 
-    with col3:
-        specific_gravity = st.text_input('Specific Gravity')
+    inputs = []
+    labels = [
+        "Age", "Blood Pressure", "Specific Gravity", "Albumin", "Sugar",
+        "Red Blood Cells", "Pus Cell", "Pus Cell Clumps", "Bacteria",
+        "Blood Glucose Random", "Blood Urea", "Serum Creatinine",
+        "Sodium", "Potassium", "Haemoglobin", "Packed Cell Volume",
+        "White Blood Cell Count", "Red Blood Cell Count", "Hypertension",
+        "Diabetes Mellitus", "Coronary Artery Disease", "Appetite",
+        "Pedal Edema", "Anaemia"
+    ]
 
-    with col4:
-        albumin = st.text_input('Albumin')
+    cols = st.columns(4)
+    for i, label in enumerate(labels):
+        with cols[i % 4]:
+            inputs.append(st.number_input(label, min_value=0.0))
 
-    with col5:
-        sugar = st.text_input('Sugar')
+    kidney_result = ""
 
-    with col1:
-        red_blood_cells = st.text_input('Red Blood Cell')
+    if st.button("Kidney Test Result"):
+        prediction = kidney_disease_model.predict([inputs])
 
-    with col2:
-        pus_cell = st.text_input('Pus Cell')
+        kidney_result = (
+            "🔴 The person has kidney disease"
+            if prediction[0] == 1
+            else "🟢 The person does not have kidney disease"
+        )
 
-    with col3:
-        pus_cell_clumps = st.text_input('Pus Cell Clumps')
-
-    with col4:
-        bacteria = st.text_input('Bacteria')
-
-    with col5:
-        blood_glucose_random = st.text_input('Blood Glucose Random')
-
-    with col1:
-        blood_urea = st.text_input('Blood Urea')
-
-    with col2:
-        serum_creatinine = st.text_input('Serum Creatinine')
-
-    with col3:
-        sodium = st.text_input('Sodium')
-
-    with col4:
-        potassium = st.text_input('Potassium')
-
-    with col5:
-        haemoglobin = st.text_input('Haemoglobin')
-
-    with col1:
-        packed_cell_volume = st.text_input('Packet Cell Volume')
-
-    with col2:
-        white_blood_cell_count = st.text_input('White Blood Cell Count')
-
-    with col3:
-        red_blood_cell_count = st.text_input('Red Blood Cell Count')
-
-    with col4:
-        hypertension = st.text_input('Hypertension')
-
-    with col5:
-        diabetes_mellitus = st.text_input('Diabetes Mellitus')
-
-    with col1:
-        coronary_artery_disease = st.text_input('Coronary Artery Disease')
-
-    with col2:
-        appetite = st.text_input('Appetitte')
-
-    with col3:
-        peda_edema = st.text_input('Peda Edema')
-    with col4:
-        aanemia = st.text_input('Aanemia')
-
-    # code for Prediction
-    kindey_diagnosis = ''
-
-    # creating a button for Prediction    
-    if st.button("Kidney's Test Result"):
-
-        user_input = [age, blood_pressure, specific_gravity, albumin, sugar,
-       red_blood_cells, pus_cell, pus_cell_clumps, bacteria,
-       blood_glucose_random, blood_urea, serum_creatinine, sodium,
-       potassium, haemoglobin, packed_cell_volume,
-       white_blood_cell_count, red_blood_cell_count, hypertension,
-       diabetes_mellitus, coronary_artery_disease, appetite,
-       peda_edema, aanemia]
-
-        user_input = [safe_float_conversion(x) for x in user_input]
-    
-        
-
-        prediction = kidney_disease_model.predict([user_input])
-        
-
-
-        if prediction[0] == 1:
-            kindey_diagnosis = "The person has Kidney's disease"
-        else:
-            kindey_diagnosis = "The person does not have Kidney's disease"
-    st.success(kindey_diagnosis)
+    st.success(kidney_result)
